@@ -24,7 +24,7 @@ class DeliveryController extends Controller
         $driver  = $request->user();
         $tanggal = $request->query('tanggal', Carbon::today()->toDateString());
 
-        $deliveries = Delivery::with(['order.guru.school', 'order.menu'])
+        $deliveries = Delivery::with(['order.guru.schoolData', 'order.menu'])
             ->where('driver_id', $driver->id)
             ->orderBy('created_at')
             ->get()
@@ -48,7 +48,7 @@ class DeliveryController extends Controller
     {
         $driver = $request->user();
 
-        $delivery = Delivery::with(['order.guru.school', 'order.menu'])
+        $delivery = Delivery::with(['order.guru.schoolData', 'order.menu'])
             ->where('driver_id', $driver->id)
             ->findOrFail($id);
 
@@ -96,7 +96,7 @@ class DeliveryController extends Controller
 
         return response()->json([
             'message' => 'Status pengiriman berhasil diupdate',
-            'data'    => $this->formatDelivery($delivery->fresh(['order.guru.school'])),
+            'data'    => $this->formatDelivery($delivery->fresh(['order.guru.schoolData'])),
         ]);
     }
 
@@ -150,7 +150,7 @@ class DeliveryController extends Controller
     {
         $order  = $delivery->order;
         $guru   = $order?->guru;
-        $school = $guru?->school;
+        $school = $guru?->schoolData;
 
         $data = [
             'delivery_id'        => $delivery->id,

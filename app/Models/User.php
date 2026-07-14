@@ -34,7 +34,7 @@ class User extends Authenticatable
         ];
     }
 
-    public function school()
+    public function schoolData()
 {
     return $this->belongsTo(School::class, 'school_id');
 }
