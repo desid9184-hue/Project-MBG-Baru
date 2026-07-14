@@ -23,8 +23,8 @@ class SchoolSeeder extends Seeder
             [
                 'nama_sekolah' => 'Madrasah Aliyah Unggulan',
                 'alamat'       => 'Rantai Baru, Pangkalan Kerinci',
-                'latitude'     => 0.3832739287241727,
-                'longitude'    => 101.8302219640528,
+                'latitude'     => 0.3832095571491052, 
+                'longitude'    => 101.8303614389228,
             ],
             // Tambahkan sekolah lain di sini dengan format yang sama:
             // [

@@ -13,26 +13,27 @@ class DeliveryController extends Controller
     /**
      * GET /api/deliveries
      * Header: Authorization: Bearer {token}
-     * Query (opsional): ?tanggal=2026-07-08  (default: hari ini)
      *
      * Mengembalikan daftar tugas pengiriman milik driver yang sedang
-     * login untuk tanggal tertentu (default hari ini), lengkap dengan
-     * data sekolah tujuan (untuk ditampilkan di list "tugas hari ini").
+     * login, lengkap dengan data guru, sekolah tujuan, dan porsi.
+     * Struktur response ini disesuaikan persis dengan model Java
+     * (DeliveryListResponse & Delivery) di aplikasi Android.
      */
     public function index(Request $request)
     {
-        $driver = $request->user();
+        $driver  = $request->user();
+        $tanggal = $request->query('tanggal', Carbon::today()->toDateString());
 
-        // HAPUS ATAU KOMENTAR BAGIAN whereHas TANGGAL SEMENTARA
-        $deliveries = Delivery::with(['order.user.school', 'order.menu'])
+        $deliveries = Delivery::with(['order.guru.school', 'order.menu'])
             ->where('driver_id', $driver->id)
-            // ->whereHas('order', function ($q) use ($tanggal) { ... }) 
             ->orderBy('created_at')
             ->get()
             ->map(fn($delivery) => $this->formatDelivery($delivery));
 
         return response()->json([
-            'data' => $deliveries,
+            'tanggal' => $tanggal,
+            'total'   => $deliveries->count(),
+            'data'    => $deliveries,
         ]);
     }
 
@@ -59,11 +60,7 @@ class DeliveryController extends Controller
      * Header: Authorization: Bearer {token}
      * Body: status (string)
      *
-     * Update status pengiriman. Sesuaikan daftar $statusValid di bawah
-     * dengan pilihan enum "status_pengiriman" yang sebenarnya ada di
-     * migration tabel delivery Anda.
-     *
-     * Saat status diubah ke status "berangkat" (dalam_perjalanan),
+     * Update status pengiriman. Saat status diubah ke "dalam_perjalanan",
      * tracking_active otomatis diaktifkan. Saat status "selesai",
      * tracking_active otomatis dimatikan dan delivered_at diisi.
      */
@@ -86,12 +83,10 @@ class DeliveryController extends Controller
             $delivery->catatan_driver = $request->catatan_driver;
         }
 
-        // Aktifkan tracking otomatis saat driver mulai berangkat
         if ($request->status === 'dalam_perjalanan') {
             $delivery->tracking_active = true;
         }
 
-        // Matikan tracking & catat waktu selesai saat delivery tuntas
         if ($request->status === 'selesai') {
             $delivery->tracking_active = false;
             $delivery->delivered_at    = now();
@@ -111,8 +106,7 @@ class DeliveryController extends Controller
      * Body: latitude (decimal), longitude (decimal)
      *
      * Dipanggil oleh aplikasi Android setiap 10 detik selama
-     * tracking_active bernilai true, untuk update posisi driver
-     * saat ini secara real-time.
+     * tracking_active bernilai true.
      */
     public function updateLocation(Request $request, $id)
     {
@@ -125,9 +119,6 @@ class DeliveryController extends Controller
             'longitude' => 'required|numeric|between:-180,180',
         ]);
 
-        // Kalau delivery belum aktif tracking-nya, tolak update lokasi
-        // supaya tidak ada data lokasi "nyasar" masuk untuk delivery
-        // yang belum/sudah selesai.
         if (! $delivery->tracking_active) {
             return response()->json([
                 'message' => 'Tracking untuk delivery ini sedang tidak aktif.',
@@ -140,33 +131,46 @@ class DeliveryController extends Controller
         ]);
 
         return response()->json([
-            'message'   => 'Lokasi berhasil diupdate',
-            'latitude'  => $delivery->current_latitude,
-            'longitude' => $delivery->current_longitude,
+            'message'    => 'Lokasi berhasil diupdate',
+            'latitude'   => $delivery->current_latitude,
+            'longitude'  => $delivery->current_longitude,
             'updated_at' => $delivery->updated_at,
         ]);
     }
 
     /**
-     * Helper: format response delivery supaya konsisten & sudah termasuk
-     * koordinat sekolah tujuan untuk digambar rutenya di peta.
+     * Helper: format response delivery. Struktur field DI SINI disesuaikan
+     * PERSIS dengan model Java Delivery.java di aplikasi Android:
+     * delivery_id, status_pengiriman, tracking_active, current_latitude,
+     * current_longitude, delivered_at, tanggal_pengiriman,
+     * jumlah_porsi_besar, jumlah_porsi_kecil, guru{nama,phone},
+     * sekolah_tujuan{nama,alamat,latitude,longitude}
      */
     private function formatDelivery(Delivery $delivery, bool $detail = false): array
     {
         $order  = $delivery->order;
-        $guru   = $order?->user;
+        $guru   = $order?->guru;
         $school = $guru?->school;
 
-        $schoolData = is_object($school) ? $school : new \App\Models\School();
-
         $data = [
-            'delivery_id'       => $delivery->id,
-            'status_pengiriman' => $delivery->status_pengiriman,
-            'sekolah_tujuan'    => [
-                'nama'      => $schoolData->nama_sekolah ?? 'N/A',
-                'alamat'    => $schoolData->alamat ?? 'N/A',
-                'latitude'  => $schoolData->latitude ?? 0,
-                'longitude' => $schoolData->longitude ?? 0,
+            'delivery_id'        => $delivery->id,
+            'status_pengiriman'  => $delivery->status_pengiriman,
+            'tracking_active'    => (bool) $delivery->tracking_active,
+            'current_latitude'   => $delivery->current_latitude,
+            'current_longitude'  => $delivery->current_longitude,
+            'delivered_at'       => $delivery->delivered_at,
+            'tanggal_pengiriman' => $order?->tanggal_pengiriman,
+            'jumlah_porsi_besar' => $order?->jumlah_porsi_besar ?? 0,
+            'jumlah_porsi_kecil' => $order?->jumlah_porsi_kecil ?? 0,
+            'guru'               => [
+                'nama'  => $guru?->name ?? 'N/A',
+                'phone' => $guru?->phone ?? '-',
+            ],
+            'sekolah_tujuan'     => [
+                'nama'      => $school?->nama_sekolah ?? 'N/A',
+                'alamat'    => $school?->alamat ?? 'N/A',
+                'latitude'  => $school?->latitude ?? 0,
+                'longitude' => $school?->longitude ?? 0,
             ],
         ];
 
