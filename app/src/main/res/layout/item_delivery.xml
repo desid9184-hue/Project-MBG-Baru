@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_margin="8dp"
+    android:background="#E0E0E0">
+
+    <TextView
+        android:id="@+id/tvNamaSekolah"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Nama Sekolah"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#000000" />
+
+    <TextView
+        android:id="@+id/tvNamaGuru"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Guru: -"
+        android:layout_marginTop="4dp" />
+
+    <TextView
+        android:id="@+id/tvPorsi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Porsi: Besar (0), Kecil (0)"
+        android:layout_marginTop="4dp" />
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Status: -"
+        android:textStyle="italic"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="8dp" />
+
+    <Button
+        android:id="@+id/btnMulaiAntar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Detail / Mulai Antar" />
+
+</LinearLayout>
