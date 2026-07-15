@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
         'name',
@@ -44,6 +45,11 @@ class User extends Authenticatable
         return $this->hasMany(Delivery::class, 'driver_id');
     }
 
+     public function schoolData()
+    {
+        return $this->belongsTo(School::class, 'school_id');
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -66,7 +72,7 @@ class User extends Authenticatable
 
     public function getRoleLabelAttribute(): string
     {
-        return match($this->role) {
+        return match ($this->role) {
             'admin'   => 'Administrator',
             'guru'    => 'Guru',
             'asisten' => 'Asisten Lapangan',
@@ -77,7 +83,7 @@ class User extends Authenticatable
 
     public function getRoleBadgeAttribute(): string
     {
-        return match($this->role) {
+        return match ($this->role) {
             'admin'   => 'bg-danger',
             'guru'    => 'bg-primary',
             'asisten' => 'bg-success',
