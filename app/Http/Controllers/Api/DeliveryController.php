@@ -94,6 +94,10 @@ class DeliveryController extends Controller
 
         $delivery->save();
 
+        if (in_array($request->status, ['dalam_perjalanan', 'sampai_sekolah', 'selesai'])) {
+    $delivery->order()->update(['status' => $request->status]);
+}
+
         return response()->json([
             'message' => 'Status pengiriman berhasil diupdate',
             'data'    => $this->formatDelivery($delivery->fresh(['order.guru.schoolData'])),
