@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Models;
-use Laravel\Sanctum\HasApiTokens;
+
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -10,7 +10,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
         'name',
@@ -33,11 +33,6 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-
-    public function schoolData()
-{
-    return $this->belongsTo(School::class, 'school_id');
-}
 
     public function orders()
     {
@@ -71,7 +66,7 @@ class User extends Authenticatable
 
     public function getRoleLabelAttribute(): string
     {
-        return match ($this->role) {
+        return match($this->role) {
             'admin'   => 'Administrator',
             'guru'    => 'Guru',
             'asisten' => 'Asisten Lapangan',
@@ -82,7 +77,7 @@ class User extends Authenticatable
 
     public function getRoleBadgeAttribute(): string
     {
-        return match ($this->role) {
+        return match($this->role) {
             'admin'   => 'bg-danger',
             'guru'    => 'bg-primary',
             'asisten' => 'bg-success',

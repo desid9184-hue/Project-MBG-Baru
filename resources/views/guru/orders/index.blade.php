@@ -21,7 +21,6 @@
     </a>
 </div>
 
-<!-- Filter -->
 <div class="card mb-4">
     <div class="card-body py-3">
         <form method="GET" class="row g-2 align-items-end">
@@ -86,6 +85,13 @@
                                 <a href="{{ route('guru.orders.show', $order) }}" class="btn btn-sm btn-outline-primary" title="Detail">
                                     <i class="bi bi-eye"></i>
                                 </a>
+
+                                @if($order->status == 'pending')
+                                <a href="{{ route('guru.orders.edit', $order->id) }}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                @endif
+
                                 @if(in_array($order->status, ['dalam_perjalanan', 'sampai_sekolah']) && $order->delivery)
                                 <a href="{{ route('guru.tracking', $order) }}" class="btn btn-sm btn-success" title="Live Tracking">
                                     <i class="bi bi-geo-alt-fill"></i>

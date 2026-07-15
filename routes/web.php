@@ -39,6 +39,10 @@ Route::prefix('guru')->name('guru.')->middleware(['auth', 'role:guru'])->group(f
     Route::get('/orders/create', [GuruController::class, 'createOrder'])->name('orders.create');
     Route::post('/orders', [GuruController::class, 'storeOrder'])->name('orders.store');
     Route::get('/orders/{order}', [GuruController::class, 'showOrder'])->name('orders.show');
+    
+    // RUTE TAMBAHAN UNTUK EDIT
+    Route::get('/orders/{order}/edit', [GuruController::class, 'editOrder'])->name('orders.edit');
+    Route::put('/orders/{order}', [GuruController::class, 'updateOrder'])->name('orders.update');
 
     // Tracking
     Route::get('/tracking/{order}', [GuruController::class, 'tracking'])->name('tracking');

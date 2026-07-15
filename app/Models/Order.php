@@ -23,11 +23,9 @@ class Order extends Model
     ];
 
     public function guru()
-{
-    // Kita arahkan ke model User
-    return $this->belongsTo(User::class, 'guru_id')
-                ->where('role', 'guru'); 
-}
+    {
+        return $this->belongsTo(User::class, 'guru_id');
+    }
 
     public function menu()
     {
@@ -46,13 +44,13 @@ class Order extends Model
 
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->status) {
+        return match($this->status) {
             'pending'         => 'Menunggu Konfirmasi',
             'diterima'        => 'Diterima Asisten',
             'diproses'        => 'Sedang Diproses',
             'dikemas'         => 'Sedang Dikemas',
             'siap_dikirim'    => 'Siap Dikirim',
-            'dalam_perjalanan' => 'Dalam Perjalanan',
+            'dalam_perjalanan'=> 'Dalam Perjalanan',
             'sampai_sekolah'  => 'Sampai di Sekolah',
             'selesai'         => 'Selesai',
             'dibatalkan'      => 'Dibatalkan',
@@ -62,13 +60,13 @@ class Order extends Model
 
     public function getStatusBadgeAttribute(): string
     {
-        return match ($this->status) {
+        return match($this->status) {
             'pending'         => 'badge-warning',
             'diterima'        => 'badge-info',
             'diproses'        => 'badge-primary',
             'dikemas'         => 'badge-primary',
             'siap_dikirim'    => 'badge-success',
-            'dalam_perjalanan' => 'badge-warning',
+            'dalam_perjalanan'=> 'badge-warning',
             'sampai_sekolah'  => 'badge-info',
             'selesai'         => 'badge-success',
             'dibatalkan'      => 'badge-danger',
@@ -78,13 +76,13 @@ class Order extends Model
 
     public function getStatusColorAttribute(): string
     {
-        return match ($this->status) {
+        return match($this->status) {
             'pending'         => 'warning',
             'diterima'        => 'info',
             'diproses'        => 'primary',
             'dikemas'         => 'primary',
             'siap_dikirim'    => 'success',
-            'dalam_perjalanan' => 'warning',
+            'dalam_perjalanan'=> 'warning',
             'sampai_sekolah'  => 'info',
             'selesai'         => 'success',
             'dibatalkan'      => 'danger',

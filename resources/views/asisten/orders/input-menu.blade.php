@@ -84,7 +84,7 @@
                         <div class="row g-3">
                             <div class="col-6 col-md-3">
                                 <label class="form-label">Kalori (kkal) <span class="text-danger">*</span></label>
-                                <input type="number" name="kalori" step="0.01"
+                                <input type="number" name="kalori" id="kalori" step="0.01"
                                        class="form-control @error('kalori') is-invalid @enderror"
                                        value="{{ old('kalori', $menu->kalori ?? '') }}"
                                        placeholder="0" min="0" max="9999" required>
@@ -144,19 +144,17 @@
 
 @push('scripts')
 <script>
-document.getElementById('kalori').addEventListener('input', updateKalori);
-function updateKalori() {
-    const val = parseFloat(document.getElementById('kalori').value) || 0;
-    document.getElementById('kalori-preview').textContent = val.toLocaleString('id-ID') + ' kkal';
-}
-// Rename input id references
 document.addEventListener('DOMContentLoaded', () => {
-    const kaloriInput = document.querySelector('input[name="kalori"]');
-    if (kaloriInput) {
-        kaloriInput.setAttribute('id', 'kalori');
-        kaloriInput.addEventListener('input', updateKalori);
-        updateKalori.call(kaloriInput);
+    const kaloriInput = document.getElementById('kalori');
+    const preview = document.getElementById('kalori-preview');
+
+    function updateKalori() {
+        const val = parseFloat(kaloriInput.value) || 0;
+        preview.textContent = val.toLocaleString('id-ID') + ' kkal';
     }
+
+    kaloriInput.addEventListener('input', updateKalori);
+    updateKalori(); // langsung tampilkan nilai saat halaman dibuka (mode edit)
 });
 </script>
 @endpush

@@ -94,14 +94,12 @@
 
                 <div id="tracking-controls-<?php echo e($delivery->id); ?>">
                     <?php if(!$delivery->tracking_active && $delivery->status_pengiriman == 'menunggu'): ?>
-                    
-                    <button class="btn btn-success w-100 mb-2" data-id="<?php echo e($delivery->id); ?>" onclick="startTracking(this.getAttribute('data-id'))">
+                    <button class="btn btn-success w-100 mb-2" data-id="<?php echo e($delivery->id); ?>" onclick="startTracking(this.getAttribute('data-id'), this)">
                         <i class="bi bi-geo-alt-fill me-2"></i>Mulai Tracking GPS
                     </button>
                     <?php endif; ?>
 
                     <?php if($delivery->tracking_active && $delivery->status_pengiriman == 'dalam_perjalanan'): ?>
-                    
                     <button class="btn btn-info w-100 mb-2 text-white" data-id="<?php echo e($delivery->id); ?>" onclick="arrivedAtSchool(this.getAttribute('data-id'))">
                         <i class="bi bi-building-fill-check me-2"></i>Konfirmasi Sampai Sekolah
                     </button>
@@ -181,7 +179,6 @@
 </div>
 <?php endif; ?>
 
-
 <?php
     $currentActiveDeliveryId = null;
     if(isset($active_deliveries) && $active_deliveries->count() > 0) {
@@ -203,12 +200,11 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute
 let watchId = null;
 let driverMap = null;
 let driverMarker = null;
+let myIcon = null;
 
-// Mengambil data ID dari Hidden Input
 const activeDeliveryInput = document.getElementById('active-delivery-id');
 let activeDeliveryId = activeDeliveryInput ? activeDeliveryInput.value : null;
 
-// Cek apakah Peta dirender (Ada pengiriman)
 const mapContainer = document.getElementById('driver-map');
 
 if (mapContainer) {
@@ -217,7 +213,7 @@ if (mapContainer) {
         attribution: '© OpenStreetMap contributors'
     }).addTo(driverMap);
 
-    const myIcon = L.divIcon({
+    myIcon = L.divIcon({
         html: '<div style="background:#2563eb;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(37,99,235,.4);border:3px solid white;"><i class="bi bi-person-fill" style="color:white;font-size:18px;"></i></div>',
         className: '', iconSize: [44, 44], iconAnchor: [22, 22],
     });
@@ -227,43 +223,88 @@ if (mapContainer) {
     }
 }
 
-function startTracking(deliveryId) {
+// PERBAIKAN: coba dulu dengan akurasi tinggi & timeout wajar,
+// kalau gagal/timeout, otomatis coba ulang dengan akurasi rendah (lebih cepat dapat lokasi)
+function startTracking(deliveryId, btnEl) {
     if (!navigator.geolocation) {
         alert('GPS tidak didukung di perangkat ini.');
         return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-        (pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
+    if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Mencari lokasi...';
+    }
 
-            fetch(`/driver/deliveries/${deliveryId}/start-tracking`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({
-                    latitude: lat,
-                    longitude: lng,
-                    accuracy: pos.coords.accuracy,
-                })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    activeDeliveryId = deliveryId;
-                    startGPSWatch();
-                    location.reload();
-                }
-            })
-            .catch(err => console.error(err));
-        },
-        (err) => alert('Gagal mendapatkan lokasi GPS: ' + err.message),
-        { enableHighAccuracy: true, timeout: 10000 }
+    getLocationWithFallback(
+        (pos) => sendStartTracking(deliveryId, pos, btnEl),
+        (err) => {
+            alert('Gagal mendapatkan lokasi GPS: ' + err.message + '\n\nPastikan izin lokasi sudah diizinkan dan GPS/koneksi internet aktif, lalu coba lagi.');
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.innerHTML = '<i class="bi bi-geo-alt-fill me-2"></i>Mulai Tracking GPS';
+            }
+        }
     );
+}
+
+// Coba akurasi tinggi dulu (20 detik), kalau timeout coba lagi dengan akurasi rendah (15 detik)
+function getLocationWithFallback(onSuccess, onError) {
+    navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        (err) => {
+            if (err.code === err.TIMEOUT) {
+                // Fallback: coba lagi tanpa high accuracy, biasanya lebih cepat dapat lokasi kasar
+                navigator.geolocation.getCurrentPosition(
+                    onSuccess,
+                    onError,
+                    { enableHighAccuracy: false, timeout: 15000, maximumAge: 30000 }
+                );
+            } else {
+                onError(err);
+            }
+        },
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+    );
+}
+
+function sendStartTracking(deliveryId, pos, btnEl) {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    fetch(`/driver/deliveries/${deliveryId}/start-tracking`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+            latitude: lat,
+            longitude: lng,
+            accuracy: pos.coords.accuracy,
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            activeDeliveryId = deliveryId;
+            startGPSWatch();
+            location.reload();
+        } else {
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.innerHTML = '<i class="bi bi-geo-alt-fill me-2"></i>Mulai Tracking GPS';
+            }
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = '<i class="bi bi-geo-alt-fill me-2"></i>Mulai Tracking GPS';
+        }
+    });
 }
 
 function startGPSWatch() {
@@ -308,7 +349,7 @@ function startGPSWatch() {
             document.getElementById('gps-badge').className = 'badge bg-danger';
             document.getElementById('gps-badge').textContent = 'GPS Error';
         },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
     );
 }
 

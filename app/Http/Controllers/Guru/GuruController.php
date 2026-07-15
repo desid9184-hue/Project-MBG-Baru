@@ -97,6 +97,52 @@ class GuruController extends Controller
         return view('guru.orders.show', compact('order'));
     }
 
+    // FUNGSI BARU: MENAMPILKAN FORM EDIT PESANAN
+    public function editOrder(Order $order)
+    {
+        $this->authorizeOrder($order);
+
+        // Pastikan pesanan hanya bisa di-edit jika statusnya masih pending
+        if ($order->status !== 'pending') {
+            return redirect()->route('guru.orders')->with('error', 'Pesanan yang sudah diproses tidak dapat diubah.');
+        }
+
+        $min_date = Carbon::now()->addDays(3)->format('Y-m-d');
+        return view('guru.orders.edit', compact('order', 'min_date'));
+    }
+
+    // FUNGSI BARU: MENYIMPAN PERUBAHAN EDIT PESANAN
+    public function updateOrder(Request $request, Order $order)
+    {
+        $this->authorizeOrder($order);
+
+        if ($order->status !== 'pending') {
+            return redirect()->route('guru.orders')->with('error', 'Pesanan yang sudah diproses tidak dapat diubah.');
+        }
+
+        $request->validate([
+            'tanggal_pengiriman'  => 'required|date|after:' . Carbon::now()->addDays(2)->format('Y-m-d'),
+            'jumlah_porsi_besar'  => 'required|integer|min:0',
+            'jumlah_porsi_kecil'  => 'required|integer|min:0',
+            'catatan'             => 'nullable|string|max:500',
+        ], [
+            'tanggal_pengiriman.after' => 'Pesanan harus dibuat minimal H-3 sebelum tanggal pengiriman.',
+        ]);
+
+        if ($request->jumlah_porsi_besar + $request->jumlah_porsi_kecil === 0) {
+            return back()->withErrors(['jumlah_porsi_besar' => 'Total porsi minimal 1.'])->withInput();
+        }
+
+        $order->update([
+            'tanggal_pengiriman' => $request->tanggal_pengiriman,
+            'jumlah_porsi_besar' => $request->jumlah_porsi_besar,
+            'jumlah_porsi_kecil' => $request->jumlah_porsi_kecil,
+            'catatan'            => $request->catatan,
+        ]);
+
+        return redirect()->route('guru.orders')->with('success', 'Pesanan berhasil diperbarui!');
+    }
+
     public function tracking(Order $order)
     {
         $this->authorizeOrder($order);

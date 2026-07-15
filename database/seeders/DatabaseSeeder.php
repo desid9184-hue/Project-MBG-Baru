@@ -7,7 +7,6 @@ use App\Models\Menu;
 use App\Models\Order;
 use App\Models\User;
 use Carbon\Carbon;
-
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 

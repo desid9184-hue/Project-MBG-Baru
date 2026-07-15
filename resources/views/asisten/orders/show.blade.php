@@ -140,7 +140,7 @@
                 <div class="row g-2">
                     <div class="col-6 col-md-3">
                         <div class="text-center p-3" style="background:#dbeafe;border-radius:12px;">
-                            <div class="fw-800 fs-5 text-primary">{{ number_format($order->menu->kalori,0) }}</div>
+                            <div class="fw-800 fs-5 text-primary">{{ number_format($order->menu->kalori,1) }}</div>
                             <small class="text-muted">kkal</small>
                             <div style="font-size:.75rem;font-weight:600;color:#1e40af;">Kalori</div>
                         </div>
